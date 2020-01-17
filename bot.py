@@ -19,6 +19,12 @@ init = True
 channel = None
 
 def main():
+	if not TOKEN or not CHANNEL or not USER_ID or not CLIENT_ID:
+		print('Invalid configuration')
+		for key, value in {'Token': TOKEN, 'Channel': CHANNEL, 'User-ID': USER_ID, 'Client-ID': CLIENT_ID}.items():
+			if not value:
+				print(f'{key} missing')
+		return
 	client.run(TOKEN)
 
 async def query_status():
