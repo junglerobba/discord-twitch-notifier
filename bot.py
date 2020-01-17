@@ -1,11 +1,17 @@
 import os
 import json
+import logging
 import discord
 from dotenv import load_dotenv
 import asyncio
 import requests
 
 load_dotenv()
+logging.basicConfig(
+	format='%(asctime)s %(levelname)-8s %(message)s',
+	level=logging.INFO,
+	datefmt='%Y-%m-%d %H:%M:%S'
+)
 TOKEN = os.getenv('DISCORD_TOKEN')
 CHANNEL = os.getenv('DISCORD_CHANNEL')
 USER_ID = os.getenv('TWITCH_USER_ID')
@@ -20,25 +26,25 @@ channel = None
 
 def main():
 	if not TOKEN or not CHANNEL or not USER_ID or not CLIENT_ID:
-		print('Invalid configuration')
+		logging.error('Invalid configuration')
 		for key, value in {'Token': TOKEN, 'Channel': CHANNEL, 'User-ID': USER_ID, 'Client-ID': CLIENT_ID}.items():
 			if not value:
-				print(f'{key} missing')
+				logging.error(f'{key} missing')
 		return
 	client.run(TOKEN)
 
 async def query_status():
 	global stream_live, init
-	print('Querying stream status...')
+	logging.info('Querying stream status...')
 	streamer_data = get_streamer_data(USER_ID)
 	if len(streamer_data) > 0 and streamer_data[0]['type'] == 'live':
-		print(streamer_data[0])
+		logging.debug(streamer_data[0])
 		if not stream_live and not init:
 			game_data = get_game_name(streamer_data[0]['game_id'])
 			await discord_notify(streamer_data[0], game_data)
 		stream_live = True
 	else:
-		print('Stream offline')
+		logging.info('Stream offline')
 		stream_live = False
 	init = False
 
@@ -55,7 +61,7 @@ def get_game_name(game_id: str):
 
 async def discord_notify(streamer_data, game_name):
 	global channel
-	print(f'Stream went live! Notifying #{channel.name}')
+	logging.info(f'Stream went live! Notifying #{channel.name}')
 	await channel.send(f"@here {streamer_data['user_name']} just went live!\n\
 		Playing {game_name}\n\
 		{streamer_data['title']}\n\
@@ -66,7 +72,7 @@ async def on_ready():
 	global channel
 
 	channel = client.get_channel(int(CHANNEL))
-	print(
+	logging.info(
 		f'{client.user} has connected to Discord!\n'
 		f'Sending notifications in #{channel.name}'
 	)
