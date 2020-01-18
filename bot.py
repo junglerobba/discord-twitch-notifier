@@ -14,6 +14,7 @@ logging.basicConfig(
 )
 TOKEN = os.getenv('DISCORD_TOKEN')
 CHANNEL = os.getenv('DISCORD_CHANNEL')
+USER_NAME = os.getenv('TWITCH_USER_NAME')
 USER_ID = os.getenv('TWITCH_USER_ID')
 CLIENT_ID = os.getenv('TWITCH_CLIENT_ID')
 HEADERS = {
@@ -25,12 +26,20 @@ init = True
 channel = None
 
 def main():
-	if not TOKEN or not CHANNEL or not USER_ID or not CLIENT_ID:
+	global USER_ID
+	if not TOKEN or not CHANNEL or not CLIENT_ID or (not USER_ID and not USER_NAME):
 		logging.error('Invalid configuration')
-		for key, value in {'Token': TOKEN, 'Channel': CHANNEL, 'User-ID': USER_ID, 'Client-ID': CLIENT_ID}.items():
+		for key, value in {'Token': TOKEN, 'Channel': CHANNEL, 'User-ID': USER_ID, 'Client-ID': CLIENT_ID, 'Username': USER_NAME}.items():
 			if not value:
 				logging.error(f'{key} missing')
 		return
+	if not USER_ID:
+		user = get_twitch_user(USER_NAME)
+		if not user:
+			logging.error(f'User {USER_NAME} does not exist')
+			return
+		USER_ID = user['id']
+		logging.info(f'Sending notifications for channel {USER_NAME} ({USER_ID})')
 	client.run(TOKEN)
 
 async def query_status():
@@ -47,6 +56,11 @@ async def query_status():
 		logging.info('Stream offline')
 		stream_live = False
 	init = False
+
+def get_twitch_user(user_name: str):
+	res = requests.get(url='https://api.twitch.tv/helix/users', params={'login': user_name}, headers=HEADERS)
+	if len(res.json()['data']) > 0:
+		return res.json()['data'][0]
 
 def get_streamer_data(user_id: str):
 	res = requests.get(url = 'https://api.twitch.tv/helix/streams', params = {'user_id': user_id}, headers = HEADERS)
