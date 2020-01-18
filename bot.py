@@ -72,10 +72,8 @@ async def on_ready():
 	global channel
 
 	channel = client.get_channel(int(CHANNEL))
-	logging.info(
-		f'{client.user} has connected to Discord!\n'
-		f'Sending notifications in #{channel.name}'
-	)
+	logging.info(f'{client.user} has connected to Discord!')
+	logging.info(f'Sending notifications in #{channel.name}')
 
 	while True:
 		await query_status()
